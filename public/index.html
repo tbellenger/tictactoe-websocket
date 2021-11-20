@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat</title>
     <script type="text/javascript">
-        const ws = new WebSocket('ws://localhost:5000');
+        const ws = new WebSocket('ws://' + window.location.hostname);
         let clientId;
         let lastMsg;
         // Browser WebSockets have slightly different syntax than `ws`.
