@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <script type="text/javascript">
+        const ws = new WebSocket('ws://localhost:5000');
+        let clientId;
+        let lastMsg;
+        // Browser WebSockets have slightly different syntax than `ws`.
+        // Instead of EventEmitter syntax `on('open')`, you assign a callback
+        // to the `onopen` property.
+        ws.onopen = function() {
+          
+            ws.send(JSON.stringify({message: 'join'}));
+          document.querySelector('#send').addEventListener('click', function() {
+              let boardIndex = document.querySelector('#message').value;
+              let clientMsg = {
+                  state: lastMsg.state,
+                  boardIndex,
+                  id: lastMsg.id
+              }
+            ws.send(JSON.stringify(clientMsg));
+          });
+        };
+  
+        ws.onmessage = function(response) {
+            lastMsg = JSON.parse(response.data);
+            if (lastMsg.message) {
+                clientId = lastMsg.message.uuid;
+            } else {
+              console.log(lastMsg.state);
+              console.log(clientId);
+              if (lastMsg.state == clientId) {
+                document.querySelector('#send').disabled = false;
+              } else {
+                document.querySelector('#send').disabled = true;
+              }
+            }
+          document.querySelector('#messages').innerHTML += `<div>${JSON.stringify(response.data)}</div>`;
+        };
+
+        ws.onclose = function(event) {
+            if (event.wasClean) {
+                console.log('connection closed cleanly');
+            } else {
+                console.log('connection failed');
+            }
+        }
+
+        ws.onerror = function(error) {
+            console.log(error.message);
+        }
+      </script>
+</head>
+<body>
+    <h1>Chat</h1>
+    <div>
+      <input id="message" placeholder="Message">
+      <button id="send" disabled="true">Send</button>
+    </div>
+    <div id="messages">
+    </div>
+</body>
+</html>
