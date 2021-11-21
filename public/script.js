@@ -5,54 +5,41 @@ let clientId;
 let lastMsg;
 
 document.querySelector('#board').addEventListener('click', function(event) {
-    console.log(event.target.dataset.cell);
-    if (clientId == lastMsg.state && event.target.innerHTML == '') {
+    if (clientId == lastMsg.message.uuid && event.target.innerHTML == '') {
         let clientMsg = {
-            state: lastMsg.state,
-            boardIndex: event.target.dataset.cell,
-            id: lastMsg.id
+            boardIndex: event.target.dataset.cell
         }
         ws.send(JSON.stringify(clientMsg));
     }
 });
 
-// Join the server
-ws.onopen = function () {
-    ws.send(JSON.stringify({ message: 'join' }));
-    // add listener for incoming 
-    document.querySelector('#send').addEventListener('click', function () {
-        let boardIndex = document.querySelector('#message').value;
-        let clientMsg = {
-            state: lastMsg.state,
-            boardIndex,
-            id: lastMsg.id
-        }
-        ws.send(JSON.stringify(clientMsg));
-    });
-};
+document.querySelector('#restart').addEventListener('click', function(event) {
+    ws.send(JSON.stringify({message:'restart'}));
+    document.querySelector('#end-game').classList.toggle("show");
+});
 
 ws.onmessage = function (response) {
     lastMsg = JSON.parse(response.data);
     if (lastMsg.message) {
-        if (lastMsg.message.winner) {
-            if (clientId == winner) {
-                alert('you won');
-            } else {
-                alert('you lost');
-            }
-            ws.close();
-            ws.open();
-        } else {
+        if (lastMsg.message.status == 'ok') {
             clientId = lastMsg.message.uuid;
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell) => {
+                cell.innerHTML = lastMsg.message.board[cell.dataset.cell]
+            });
+            if (lastMsg.message.winner) {
+                if (clientId == lastMsg.message.winner) {
+                    console.log('you won');
+                    endGame(true);
+                } else {
+                    console.log('you lost');
+                    endGame(false);
+                }
+            }
+        } else {
+            console.log(lastMsg.message.data);
         }
-    } else {
-        console.log(lastMsg.state);
-        console.log(clientId);
-        const cells = document.querySelectorAll('.cell');
-        cells.forEach((cell) => {
-            cell.innerHTML = lastMsg.board[cell.dataset.cell]
-        });
-    }
+    } 
     document.querySelector('#messages').innerHTML += `<div>${JSON.stringify(response.data)}</div>`;
 };
 
@@ -66,4 +53,9 @@ ws.onclose = function (event) {
 
 ws.onerror = function (error) {
     console.log(error.message);
+}
+
+function endGame(isWinner) {
+    document.querySelector('#msg').innerHTML = isWinner ? "You Won!" : "You Lost!";
+    document.querySelector('#end-game').classList.toggle("show");
 }

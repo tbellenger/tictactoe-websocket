@@ -63,3 +63,15 @@ body {
 .cell:nth-child(8) {
     border-bottom: none;
 }
+
+.end-game {
+    display: none;
+}
+
+.end-game.show {
+    display:inherit;
+}
+
+.log {
+    display: none;
+}

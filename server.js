@@ -1,14 +1,11 @@
-//import 'dotenv/config.js';
 require('dotenv').config();
-//import express from 'express';
 const express = require('express');
-//import * as mongodb from 'mongodb';
 const { v4: uuidv4 } = require('uuid');
 const mongodb = require('mongodb');
 const ws = require('ws');
+const EventEmitter = require('events');
 const MongoClient = mongodb.MongoClient;
 const ObjectID = mongodb.ObjectId;
-//const Server = ws.Server;
 
 const uri = process.env.DB_SERVER_URI;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -76,7 +73,6 @@ async function dbDeleteUser(id) {
 }
 
 const waitingPlayers = [];
-const connectedPlayers = new Map();
 
 const app = express();
 app.set('port', (process.env.PORT || 5000));
@@ -87,82 +83,163 @@ app.use(express.urlencoded({ extended: true }));
 // headless websocket server prints to console
 const wsServer = new ws.Server({noServer: true});
 wsServer.on('connection', socket => {
-  console.log('web socket connection');
-  socket.uuidv4 = uuidv4();
-  waitingPlayers.push(socket);
-  socket.on('message', json => {
-    const clientMsg = JSON.parse(json);
-    if (!clientMsg.state) {
-      socket.send(JSON.stringify({message: { uuid: socket.uuidv4, status: 'ok', data:'waiting on another player'}}));
-    } else {
-      const game = connectedPlayers.get(clientMsg.id);
-      if (game.board[clientMsg.boardIndex] == '' && game.state == socket.uuidv4) {
-        // space is free - set player token
-        const token = (game.player1.uuidv4 == socket.uuidv4) ? 'O':'X';
-        game.board[clientMsg.boardIndex] = token;
-        game.state = (game.state == game.player1.uuidv4) ? game.player2.uuidv4 : game.player1.uuidv4;
-        if (checkBoardForWin(game.board, token)) {
-          game.winner = socket.uuidv4;
-        }
-        updatePlayers(game);
-      } else {
-        // space is already taken...
-      }
-    }
-  });
-  socket.on('close', event => {
-    console.log('socket closed ' + socket.uuidv4 + JSON.stringify(event));
-    // notify other player that this player disconnected if there was a game running
-  });
+  const player = new Player(socket);
+  player.on('restart', (player) => {waitingPlayers.push(player)});
+  waitingPlayers.push(player);
 });
 
-const WINNING_COMBINATIONS = [
-  [0,1,2],
-  [3,4,5],
-  [6,7,8],
-  [0,3,6],
-  [1,4,7],
-  [2,5,8],
-  [0,4,8],
-  [2,4,6],
-];
-
-const checkBoardForWin = (board, token) => {
-  return WINNING_COMBINATIONS.some(combination =>{
-    return combination.every(index => {
-      return board[index] == token;
+class Player extends EventEmitter {
+  constructor(socket, id = uuidv4()) {
+    super();
+    this.socket = socket;
+    this.id = id;
+    this.token = '';
+    this.isClosed = false;
+    this.lastData;
+    this.socket.on('close', () => {
+      this.isClosed = true;
+      this.emit('quit', 'Closed connection');
     });
-  });
+    this.socket.on('message', (json) => {
+      // if this is a new game request then put back in waiting array
+      this.lastData = JSON.parse(json);
+      if (this.lastData.message) {
+        if (this.lastData.message == 'restart') {
+          this.emit('restart', this);
+        }
+      } else {
+        this.emit('player-message', this);
+      }
+    });
+    this.sendMessage({status:'ok', data: 'Waiting for another player', uuid: this.id});
+  }
+
+  sendMessage(data) {
+    if (!this.isClosed) {
+      data.token = this.token;
+      data.uuid = this.id;
+      this.socket.send(JSON.stringify({message:data}));
+    }
+  }
 }
 
-const updatePlayers = (game) => {
-  if (game.winner) {
-    game.player1.send(JSON.stringify({message:{winner:game.winner}}));
-    game.player1.send(JSON.stringify({message:{winner:game.winner}}));
+class Game extends EventEmitter {
+  static {
+    const WINNING_COMBINATIONS = [
+      [0,1,2],
+      [3,4,5],
+      [6,7,8],
+      [0,3,6],
+      [1,4,7],
+      [2,5,8],
+      [0,4,8],
+      [2,4,6],
+    ];
   }
-  const { board, state, id } = game;
-  game.player1.send(JSON.stringify({board, state, id}));
-  game.player2.send(JSON.stringify({board, state, id}));
+
+  constructor(player1, player2) {
+    super();
+    this.player1 = player1;
+    this.player2 = player2;
+    this.board = ['','','','','','','','',''];
+    this.id = uuidv4();
+    // 0 = new game
+    // 1 = in progress
+    // 2 = player quit
+    // 3 = winner
+    // 4 = game over 
+    this.state = 0;
+    this.turn = this.player1.id;
+    this.winner = '';
+    this.player1.on('quit', () => {this.state = 2; this.updatePlayers()});
+    this.player2.on('quit', () => {this.state = 2; this.updatePlayers()});
+    this.player1.on('player-message', (player) => {
+      this.incomingMessage(player);
+    });
+    this.player2.on('player-message', (player) => {
+      this.incomingMessage(player);
+    });
+    this.player1.token = 'O';
+    this.player2.token = 'X';
+
+    this.updatePlayers();
+  }
+
+  incomingMessage(player) {
+    if (this.state != 4) {
+      // check if this players turn
+      if (player.id == this.turn) {
+        // update board
+        if (this.board[player.lastData.boardIndex] != '') { return; }
+        this.board[player.lastData.boardIndex] = player.token;
+        // update whos turn it is
+        this.turn = this.player1.id == player.id ? this.player2.id : this.player1.id;
+        // check for win
+        if (this.isWinner(player)) {
+          this.winner = player.id;
+          this.state = 3
+        }
+        // Update players
+        this.updatePlayers();
+      } else {
+        // ignore ? 
+      }
+    }
+  }
+
+  updatePlayers() {
+    let data;
+    switch (this.state) {
+      case 0:
+        data = {status: 'ok', data:'New Game', board:this.board, turn:this.turn};
+        this.state = 1;
+        break;
+      case 1:
+        data = {status: 'ok', data:'Update', board:this.board, turn:this.turn};
+        break;
+      case 2: 
+        data = {status: 'err', data:'Other player quit'};
+        break;
+      case 3:
+        data = {status: 'ok', data:'Game Over', board:this.board, winner:this.winner};
+        this.state = 4;
+        break;
+    }
+
+    this.player1.sendMessage(data);
+    this.player2.sendMessage(data);
+  }
+
+  isWinner = (player) => {
+    return Game.WINNING_COMBINATIONS.some(combination =>{
+      return combination.every(index => {
+        return this.board[index] == player.token;
+      });
+    });
+  }
 }
 
-const connectPlayers = (p1, p2) => {
-  const gameId = uuidv4();
-  const game = {
-    board : ['','','','','','','','',''],
-    player1 : p1,
-    player2 : p2,
-    state : p1.uuidv4,
-    id : gameId
-  }
-  connectedPlayers.set(gameId, game);
-  updatePlayers(game);
-}
+Object.defineProperty(Game, 'WINNING_COMBINATIONS', {
+  value: [
+    [0,1,2],
+    [3,4,5],
+    [6,7,8],
+    [0,3,6],
+    [1,4,7],
+    [2,5,8],
+    [0,4,8],
+    [2,4,6],
+  ],
+  writable: false,
+  enumerable: false,
+  configurable: false
+});
 
 const checkWaitingPlayers = () => {
   if (waitingPlayers.length >= 2) {
     const p1 = waitingPlayers.pop();
     const p2 = waitingPlayers.pop();
-    connectPlayers(p1, p2);
+    new Game(p1, p2);
   }
 }
 
