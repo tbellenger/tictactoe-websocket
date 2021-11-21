@@ -1,6 +1,6 @@
 const proto = (window.location.protocol == "https:") ? "wss://":"ws://";
 //const port = (window.location.port != '') ? ':' + window.location.port : '';
-const ws = new WebSocket(proto +  window.location.hostname);
+const ws = new WebSocket(proto +  window.location.hostname + ':5000');
 let clientId;
 let lastMsg;
 
@@ -39,7 +39,6 @@ ws.onmessage = function (response) {
             }
         } else if (lastMsg.message.status == 'wait') {
             document.querySelector('#waiting').classList.add("show");
-        }
         } else {
             console.log(lastMsg.message.data);
         }
