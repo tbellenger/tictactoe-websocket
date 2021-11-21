@@ -101,6 +101,9 @@ wsServer.on('connection', socket => {
         const token = (game.player1.uuidv4 == socket.uuidv4) ? 'O':'X';
         game.board[clientMsg.boardIndex] = token;
         game.state = (game.state == game.player1.uuidv4) ? game.player2.uuidv4 : game.player1.uuidv4;
+        if (checkBoardForWin(game.board, token)) {
+          game.winner = socket.uuidv4;
+        }
         updatePlayers(game);
       } else {
         // space is already taken...
@@ -113,7 +116,30 @@ wsServer.on('connection', socket => {
   });
 });
 
+const WINNING_COMBINATIONS = [
+  [0,1,2],
+  [3,4,5],
+  [6,7,8],
+  [0,3,6],
+  [1,4,7],
+  [2,5,8],
+  [0,4,8],
+  [2,4,6],
+];
+
+const checkBoardForWin = (board, token) => {
+  return WINNING_COMBINATIONS.some(combination =>{
+    return combination.every(index => {
+      return board[index] == token;
+    });
+  });
+}
+
 const updatePlayers = (game) => {
+  if (game.winner) {
+    game.player1.send(JSON.stringify({winner:game.winner}));
+    game.player1.send(JSON.stringify({winner:game.winner}));
+  }
   const { board, state, id } = game;
   game.player1.send(JSON.stringify({board, state, id}));
   game.player2.send(JSON.stringify({board, state, id}));

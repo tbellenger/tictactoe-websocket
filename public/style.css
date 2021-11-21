@@ -22,7 +22,6 @@ body {
 
 .col {
     flex: 20%;
-    border: 1px black solid;
 }
 
 .board {
