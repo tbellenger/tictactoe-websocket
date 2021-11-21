@@ -34,7 +34,15 @@ ws.onopen = function () {
 ws.onmessage = function (response) {
     lastMsg = JSON.parse(response.data);
     if (lastMsg.message) {
-        clientId = lastMsg.message.uuid;
+        if (lastMsg.message.winner) {
+            if (clientId == winner) {
+                alert('you won');
+            } else {
+                alert('you lost');
+            }
+        } else {
+            clientId = lastMsg.message.uuid;
+        }
     } else {
         console.log(lastMsg.state);
         console.log(clientId);

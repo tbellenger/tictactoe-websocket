@@ -137,8 +137,8 @@ const checkBoardForWin = (board, token) => {
 
 const updatePlayers = (game) => {
   if (game.winner) {
-    game.player1.send(JSON.stringify({winner:game.winner}));
-    game.player1.send(JSON.stringify({winner:game.winner}));
+    game.player1.send(JSON.stringify({message:{winner:game.winner}}));
+    game.player1.send(JSON.stringify({message:{winner:game.winner}}));
   }
   const { board, state, id } = game;
   game.player1.send(JSON.stringify({board, state, id}));
