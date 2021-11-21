@@ -111,7 +111,7 @@ class Player extends EventEmitter {
         this.emit('player-message', this);
       }
     });
-    this.sendMessage({status:'ok', data: 'Waiting for another player', uuid: this.id});
+    this.sendMessage({status:'wait', data: 'Waiting for another player'});
   }
 
   sendMessage(data) {

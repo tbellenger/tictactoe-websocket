@@ -36,6 +36,9 @@ ws.onmessage = function (response) {
                     endGame(false);
                 }
             }
+        } else if (lastMsg.message.status == 'wait') {
+            document.querySelector('#waiting').classList.toggle("show");
+        }
         } else {
             console.log(lastMsg.message.data);
         }
