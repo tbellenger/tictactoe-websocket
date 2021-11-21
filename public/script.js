@@ -16,6 +16,7 @@ document.querySelector('#board').addEventListener('click', function(event) {
 document.querySelector('#restart').addEventListener('click', function(event) {
     ws.send(JSON.stringify({message:'restart'}));
     document.querySelector('#end-game').classList.toggle("show");
+    document.querySelector('#waiting').classList.add("show");
 });
 
 ws.onmessage = function (response) {
