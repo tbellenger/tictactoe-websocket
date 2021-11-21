@@ -167,7 +167,7 @@ class Game extends EventEmitter {
           this.state = 3;
         }
         // check for draw
-        if (this.board.every(index => { return this.board[index] != ''})) {
+        if (this.board.every(element => { return element != ''})) {
           this.winner = "draw";
           this.state = 3;
         }
