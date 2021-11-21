@@ -33,10 +33,13 @@ ws.onmessage = function (response) {
             if (lastMsg.message.winner) {
                 if (clientId == lastMsg.message.winner) {
                     console.log('you won');
-                    endGame(true);
+                    endGame("You Won!");
+                } else if (lastMsg.message.winner == 'draw') {
+                    console.log('draw');
+                    endGame("A Draw!");
                 } else {
                     console.log('you lost');
-                    endGame(false);
+                    endGame("You Lost!");
                 }
             }
         } else if (lastMsg.message.status == 'wait') {
@@ -60,7 +63,7 @@ ws.onerror = function (error) {
     console.log(error.message);
 }
 
-function endGame(isWinner) {
-    document.querySelector('#msg').innerHTML = isWinner ? "You Won!" : "You Lost!";
+function endGame(message) {
+    document.querySelector('#msg').innerHTML = message;
     document.querySelector('#end-game').classList.toggle("show");
 }
