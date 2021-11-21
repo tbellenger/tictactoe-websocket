@@ -1,4 +1,4 @@
-const proto = (window.location.protocol == "https") ? "wss://":"ws://";
+const proto = (window.location.protocol == "https:") ? "wss://":"ws://";
 //const port = (window.location.port != '') ? ':' + window.location.port : '';
 const ws = new WebSocket(proto +  window.location.hostname);
 let clientId;
