@@ -22,6 +22,7 @@ ws.onmessage = function (response) {
     lastMsg = JSON.parse(response.data);
     if (lastMsg.message) {
         if (lastMsg.message.status == 'ok') {
+            document.querySelector('#waiting').classList.remove("show");
             clientId = lastMsg.message.uuid;
             const cells = document.querySelectorAll('.cell');
             cells.forEach((cell) => {
@@ -37,7 +38,7 @@ ws.onmessage = function (response) {
                 }
             }
         } else if (lastMsg.message.status == 'wait') {
-            document.querySelector('#waiting').classList.toggle("show");
+            document.querySelector('#waiting').classList.add("show");
         }
         } else {
             console.log(lastMsg.message.data);
