@@ -96,7 +96,7 @@ wsServer.on('connection', socket => {
       socket.send(JSON.stringify({message: { uuid: socket.uuidv4, status: 'ok', data:'waiting on another player'}}));
     } else {
       const game = connectedPlayers.get(clientMsg.id);
-      if (game.board[clientMsg.boardIndex] == '') {
+      if (game.board[clientMsg.boardIndex] == '' && game.state == socket.uuidv4) {
         // space is free - set player token
         const token = (game.player1.uuidv4 == socket.uuidv4) ? 'O':'X';
         game.board[clientMsg.boardIndex] = token;

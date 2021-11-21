@@ -1,0 +1,66 @@
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --cell-size: 100px;
+    --mark-size: calc(var(--cell-size) * .9);
+}
+
+body {
+    margin: 0;
+    display: flex;
+}
+
+.content {
+    display: flex;
+    flex: 60%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.col {
+    flex: 20%;
+    border: 1px black solid;
+}
+
+.board {
+    display: grid;
+    justify-content: center;
+    justify-items: center;
+    align-content: center;
+    align-items: center;
+    grid-template-columns: repeat(3, auto);
+    margin: 20px 0;
+    cursor: pointer;
+}
+
+.cell {
+    display:flex;
+    border: 1px solid black;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    align-items: center;
+    justify-content: center;
+}
+
+.cell:first-child,
+.cell:nth-child(2),
+.cell:nth-child(3) {
+    border-top: none;
+}
+
+.cell:nth-child(3n + 1) {
+    border-left: none;
+}
+
+.cell:nth-child(3n + 3) {
+    border-right: none;
+}
+
+.cell:last-child,
+.cell:nth-child(7),
+.cell:nth-child(8) {
+    border-bottom: none;
+}

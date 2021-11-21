@@ -1,67 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
-    <script type="text/javascript">
-        const ws = new WebSocket('wss://' + window.location.hostname);
-        let clientId;
-        let lastMsg;
-        // Browser WebSockets have slightly different syntax than `ws`.
-        // Instead of EventEmitter syntax `on('open')`, you assign a callback
-        // to the `onopen` property.
-        ws.onopen = function() {
-          
-            ws.send(JSON.stringify({message: 'join'}));
-          document.querySelector('#send').addEventListener('click', function() {
-              let boardIndex = document.querySelector('#message').value;
-              let clientMsg = {
-                  state: lastMsg.state,
-                  boardIndex,
-                  id: lastMsg.id
-              }
-            ws.send(JSON.stringify(clientMsg));
-          });
-        };
-  
-        ws.onmessage = function(response) {
-            lastMsg = JSON.parse(response.data);
-            if (lastMsg.message) {
-                clientId = lastMsg.message.uuid;
-            } else {
-              console.log(lastMsg.state);
-              console.log(clientId);
-              if (lastMsg.state == clientId) {
-                document.querySelector('#send').disabled = false;
-              } else {
-                document.querySelector('#send').disabled = true;
-              }
-            }
-          document.querySelector('#messages').innerHTML += `<div>${JSON.stringify(response.data)}</div>`;
-        };
-
-        ws.onclose = function(event) {
-            if (event.wasClean) {
-                console.log('connection closed cleanly');
-            } else {
-                console.log('connection failed');
-            }
-        }
-
-        ws.onerror = function(error) {
-            console.log(error.message);
-        }
-      </script>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <script src="./script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <h1>Chat</h1>
-    <div>
+  <div class="col"></div>
+  <div class="content">
+    <div class="heading">
+      <h1>TicTacToe</h1>
+    </div>
+    <div class="board" id="board">
+      <div class="cell" data-cell="0"></div>
+      <div class="cell" data-cell="1"></div>
+      <div class="cell" data-cell="2"></div>
+      <div class="cell" data-cell="3"></div>
+      <div class="cell" data-cell="4"></div>
+      <div class="cell" data-cell="5"></div>
+      <div class="cell" data-cell="6"></div>
+      <div class="cell" data-cell="7"></div>
+      <div class="cell" data-cell="8"></div>
+    </div>
+    <div class="log">
       <input id="message" placeholder="Message">
       <button id="send" disabled="true">Send</button>
+      <div id="messages">
+        Some log text here
+      </div>
     </div>
-    <div id="messages">
-    </div>
+  </div>
+  <div class="col"></div>
 </body>
 </html>
