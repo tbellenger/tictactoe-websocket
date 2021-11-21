@@ -40,6 +40,8 @@ ws.onmessage = function (response) {
             } else {
                 alert('you lost');
             }
+            ws.close();
+            ws.open();
         } else {
             clientId = lastMsg.message.uuid;
         }
