@@ -5,7 +5,7 @@ let clientId;
 let lastMsg;
 
 document.querySelector('#board').addEventListener('click', function(event) {
-    if (clientId == lastMsg.message.uuid && event.target.innerHTML == '') {
+    if (clientId == lastMsg.message.turn && event.target.innerHTML == '') {
         let clientMsg = {
             boardIndex: event.target.dataset.cell
         }
@@ -25,6 +25,7 @@ ws.onmessage = function (response) {
         if (lastMsg.message.status == 'ok') {
             document.querySelector('#waiting').classList.remove("show");
             clientId = lastMsg.message.uuid;
+            document.querySelector('#turn').innerHTML = (clientId == lastMsg.message.turn) ? "Your turn" : "Their turn";
             const cells = document.querySelectorAll('.cell');
             cells.forEach((cell) => {
                 cell.innerHTML = lastMsg.message.board[cell.dataset.cell]
