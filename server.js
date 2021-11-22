@@ -165,9 +165,7 @@ class Game extends EventEmitter {
         if (this.isWinner(player)) {
           this.winner = player.id;
           this.state = 3;
-        }
-        // check for draw
-        if (this.board.every(element => { return element != ''})) {
+        } else if (this.board.every(element => { return element != ''})) {
           this.winner = "draw";
           this.state = 3;
         }
